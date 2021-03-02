@@ -83,7 +83,7 @@ lint-e2e: test/bin/shfmt test/bin/shellcheck
 build/.%.done: docker/Dockerfile.%
 	mkdir -p ./build/docker/$*
 	cp $^ ./build/docker/$*/
-	$(SUDO) docker build -t docker.io/fluxcd/$* -t docker.io/fluxcd/$*:$(IMAGE_TAG) \
+	$(SUDO) docker build -t docker.io/anjanasuraj/$* -t docker.io/anjanasuraj/$*:$(IMAGE_TAG) \
 		--build-arg VCS_REF="$(VCS_REF)" \
 		--build-arg BUILD_DATE="$(BUILD_DATE)" \
 		-f build/docker/$*/Dockerfile.$* ./build/docker/$*
@@ -169,7 +169,7 @@ $(GOBIN)/fluxd: $(FLUXD_DEPS)
 
 generate-deploy: $(GOBIN)/fluxctl
 	$(GOBIN)/fluxctl install -o ./deploy \
-		--git-url git@github.com:fluxcd/flux-get-started \
+		--git-url git@github.com:anjanasuraj/flux-get-started \
 		--git-email flux@example.com \
 		--git-user 'Flux automation' \
 		--git-label flux-sync \
@@ -185,7 +185,7 @@ build-fluxctl: release-bins
 	mkdir -p ./build/docker/fluxctl
 	cp ./build/fluxctl_linux_amd64 ./build/docker/fluxctl/fluxctl
 	cp ./docker/Dockerfile.fluxctl ./build/docker/fluxctl/Dockerfile
-	$(SUDO) docker build -t docker.io/fluxcd/fluxctl:$(IMAGE_TAG) \
+	$(SUDO) docker build -t docker.io/anjanasuraj/fluxctl:$(IMAGE_TAG) \
 		--build-arg VCS_REF="$(VCS_REF)" \
 		--build-arg BUILD_DATE="$(BUILD_DATE)" \
 		-f ./build/docker/fluxctl/Dockerfile ./build/docker/fluxctl
