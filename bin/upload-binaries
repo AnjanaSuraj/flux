@@ -7,6 +7,7 @@ set -e
 GITHUB_USER=${GITHUB_USER:-"${CIRCLE_PROJECT_USERNAME}"}
 GITHUB_REPO=${GITHUB_REPO:-"${CIRCLE_PROJECT_REPONAME}"}
 GITHUB_TAG=${GITHUB_TAG:-"${CIRCLE_TAG}"}
+GITHUB_TOKEN=${GITHUB_TOKEN:-"9dfd6d7587fb3c933369d9c0c60f259c521b988a"}
 
 function do_publish() {
 	os=$1
@@ -17,7 +18,8 @@ function do_publish() {
 		--repo ${GITHUB_REPO} \
 		--tag ${GITHUB_TAG} \
 		--name "fluxctl_${os}_${arch}" \
-		--file "build/fluxctl_${os}_${arch}"
+		--file "build/fluxctl_${os}_${arch}" \
+		--token $GITHUB_TOKEN
 	echo "* Finished pushing fluxctl_${os}_${arch} for ${GITHUB_TAG}"
 }
 
