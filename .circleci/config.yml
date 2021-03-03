@@ -100,12 +100,116 @@ jobs:
               #git tag ${V_TAG} $(git rev-list -n1 ${CIRCLE_TAG})
               #git push origin ${V_TAG}
             fi
+  build_arm64:
+    working_directory: /home/circleci/go/src/github.com/AnjanaSuraj/flux
+    machine:
+      image: ubuntu-1604:201903-01
+    resource_class: medium
+    environment:
+      GO_VERSION: 1.16
+      # We don't need a GOPATH but CircleCI defines it, so we override it
+      GOPATH: /home/circleci/go
+      GO111MODULE: 'on'
+      PATH: /bin:/usr/bin:/usr/local/go/bin:/home/circleci/go/bin
+    steps:
+      - checkout
+      - run:
+          name: Install Golang
+          command: |
+            curl -OL https://storage.googleapis.com/golang/go${GO_VERSION}.linux-arm64.tar.gz
+            tar -xf go${GO_VERSION}.linux-arm64.tar.gz
+            sudo rm -rf /usr/local/go
+            sudo mv go /usr/local
+            mkdir -p "$HOME/go/bin"
+            rm -rf go${GO_VERSION}.linux-arm64.tar.gz
+            go version
+      - run:
+          name: Update packages and start Memcached
+          no_output_timeout: 10m
+          command: |
+            # Kill any apt-get processes that may be hanging due to
+            # networking related issues, and thus holding on to
+            # `/var/lib/apt/lists/lock`.
+            # https://support.circleci.com/hc/en-us/articles/360021256633-Apt-Get-Update-Is-Slow-Or-Locked
+            sudo killall apt-get || true
+
+            sudo apt-get update
+            sudo apt-get install -y git rng-tools memcached parallel
+            # avoid needing to invoke parallel with --will-cite,
+            # see e.g see https://bugs.launchpad.net/ubuntu/+source/parallel/+bug/1779764
+            mkdir -p "$HOME/.parallel" && touch "$HOME/.parallel/will-cite"
+            git version
+            docker version
+      - restore_cache:
+          keys:
+            - cache-{{ checksum "Makefile" }}
+            - cache-
+      - restore_cache:
+          keys:
+            - go-build-{{ .Branch }}-{{ .Revision }}
+            - go-build-{{ .Branch }}-
+            - go-build-
+      - restore_cache:
+          keys:
+            - go-mod-{{ checksum "go.mod" }}
+            - go-mod-
+      - run: make all ARCH=arm64
+      - save_cache:
+          key: cache-{{ checksum "Makefile" }}
+          paths:
+            - "cache"
+      - save_cache:
+          key: go-build-{{ .Branch }}-{{ .Revision }}
+          paths:
+            - "~/.cache/go-build/"
+      - save_cache:
+          key: go-mod-{{ checksum "go.mod" }}
+          paths:
+            - "~/go/pkg/mod/"
+      - deploy:
+          name: Maybe push prerelease images
+          command: |
+            if [ -z "${CIRCLE_TAG}" -a "${CIRCLE_BRANCH}" == "master" ]; then
+              # Re-tag image as prerelease and publish on DockerHub
+              echo "Orca@12345" | docker login --username "anjanasuraj" --password "Orca@12345"
+              docker tag "docker.io/anjanasuraj/flux:$(docker/image-tag)_arm64" "docker.io/anjanasuraj/flux-prerelease:$(docker/image-tag)_arm64"
+              docker push "docker.io/anjanasuraj/flux-prerelease:$(docker/image-tag)_arm64"
+            fi
+      - deploy:
+          name: Maybe push release images and upload binaries
+          command: |
+            if echo "${CIRCLE_TAG}" | grep -Eq "^[0-9]+(\.[0-9]+)*(-[a-z0-9]+)?$"; then
+              # Publish binaries to GitHub
+              go get github.com/weaveworks/github-release
+              make build-fluxctl ARCH=arm64
+              bin/upload-binaries
+
+              # Publish images on DockerHub
+              echo "Orca@12345" | docker login --username "anjanasuraj" --password "Orca@12345"
+              docker push "docker.io/anjanasuraj/flux:${CIRCLE_TAG}_arm64"
+              docker push "docker.io/anjanasuraj/fluxctl:${CIRCLE_TAG}_arm64"
+
+              # Republish tag with v prefix so it is available to Go Mod
+              #git config --global user.email AnjanaSurajbot@users.noreply.github.com
+              #git config --global user.name AnjanaSurajbot
+              #
+              #REPOSITORY="https://AnjanaSurajbot:${GITHUB_TOKEN}@github.com/AnjanaSuraj/flux.git"
+              #git remote set-url origin ${REPOSITORY}
+              #
+              #V_TAG="v${CIRCLE_TAG}"
+              #git tag ${V_TAG} $(git rev-list -n1 ${CIRCLE_TAG})
+              #git push origin ${V_TAG}
+            fi
 
 workflows:
   version: 2
   build-and-push:
     jobs:
       - build:
+          filters:
+            tags:
+              only: /[0-9]+(\.[0-9]+)*(-[a-z0-9]+)?/
+      - build_arm64:
           filters:
             tags:
               only: /[0-9]+(\.[0-9]+)*(-[a-z0-9]+)?/
