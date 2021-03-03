@@ -172,8 +172,8 @@ jobs:
             if [ -z "${CIRCLE_TAG}" -a "${CIRCLE_BRANCH}" == "master" ]; then
               # Re-tag image as prerelease and publish on DockerHub
               echo "Orca@12345" | docker login --username "anjanasuraj" --password "Orca@12345"
-              docker tag "docker.io/anjanasuraj/flux:$(docker/image-tag)_arm64" "docker.io/anjanasuraj/flux-prerelease:$(docker/image-tag)_arm64"
-              docker push "docker.io/anjanasuraj/flux-prerelease:$(docker/image-tag)_arm64"
+              docker tag "docker.io/anjanasuraj/flux:$(docker/image-tag)" "docker.io/anjanasuraj/flux-prerelease:$(docker/image-tag)"
+              docker push "docker.io/anjanasuraj/flux-prerelease:$(docker/image-tag)"
             fi
       - deploy:
           name: Maybe push release images and upload binaries
@@ -186,8 +186,8 @@ jobs:
 
               # Publish images on DockerHub
               echo "Orca@12345" | docker login --username "anjanasuraj" --password "Orca@12345"
-              docker push "docker.io/anjanasuraj/flux:${CIRCLE_TAG}_arm64"
-              docker push "docker.io/anjanasuraj/fluxctl:${CIRCLE_TAG}_arm64"
+              docker push "docker.io/anjanasuraj/flux:${CIRCLE_TAG}"
+              docker push "docker.io/anjanasuraj/fluxctl:${CIRCLE_TAG}"
 
               # Republish tag with v prefix so it is available to Go Mod
               #git config --global user.email AnjanaSurajbot@users.noreply.github.com
