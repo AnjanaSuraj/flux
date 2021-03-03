@@ -116,12 +116,12 @@ jobs:
       - run:
           name: Install Golang
           command: |
-            curl -OL https://storage.googleapis.com/golang/go${GO_VERSION}.linux-arm64.tar.gz
-            tar -xf go${GO_VERSION}.linux-arm64.tar.gz
+            curl -OL https://storage.googleapis.com/golang/go${GO_VERSION}.linux-amd64.tar.gz
+            tar -xf go${GO_VERSION}.linux-amd64.tar.gz
             sudo rm -rf /usr/local/go
             sudo mv go /usr/local
             mkdir -p "$HOME/go/bin"
-            rm -rf go${GO_VERSION}.linux-arm64.tar.gz
+            rm -rf go${GO_VERSION}.linux-amd64.tar.gz
             go version
       - run:
           name: Update packages and start Memcached
